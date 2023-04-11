@@ -1,0 +1,48 @@
+[package]
+name = "clap-stdin"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
+description = "Provides a type for easily accepting Clap arguments from stdin"
+categories = ["command-line-interface"]
+keywords = ["clap", "stdin"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/clap-stdin"
+readme = "README.md"
+
+[features]
+default = []
+# This feature is used for testing with the bins below, since they are linked with deps and not dev-deps
+test_bin = ["clap"]
+
+[dependencies]
+thiserror = "1.0.40"
+clap = { version = "4.2.1", features = ["derive"], optional = true }
+
+[dev-dependencies]
+anyhow = "1.0"
+assert_cmd = "2.0.10"
+predicates = "3.0.2"
+clap = { version = "4.2.1", features = ["derive"]}
+
+# These bins are only used for testing
+[[bin]]
+name = "positional_arg"
+path = "tests/fixtures/positional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "optional_arg"
+path = "tests/fixtures/optional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "stdin_twice"
+path = "tests/fixtures/stdin_twice.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
