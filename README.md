@@ -1,4 +1,4 @@
-# clap-stdin [![Build](https://img.shields.io/github/workflow/status/thepacketgeek/clap-stdin/ci-build?logo=github)](https://github.com/thepacketgeek/clap-stdin/actions/workflows/ci-build.yml)
+# clap-stdin [![Build](https://img.shields.io/github/actions/workflow/status/thepacketgeek/clap-stdin/ci-build.yml?branch=main)](https://github.com/thepacketgeek/clap-stdin/actions/workflows/ci-build.yml)
 
 This library offers a wrapper type for [`clap`](https://docs.rs/clap) `Arg`s that can
 either be passed via CLI argument (positional or optional) or read in from `stdin`. When
