@@ -8,12 +8,12 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use clap_stdin::MaybeStdIn;
+use clap_stdin::MaybeStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
     /// source file to copy from (use "-" to pass from stdin)
-    source: MaybeStdIn<PathBuf>,
+    source: MaybeStdin<PathBuf>,
     /// new destination file path
     dest: PathBuf,
 }

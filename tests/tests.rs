@@ -1,11 +1,13 @@
+use std::fs;
+
 use assert_cmd::Command;
 use predicates::prelude::*;
 
-use clap_stdin::StdInError;
+use clap_stdin::StdinError;
 
 #[test]
-fn test_positional_arg() {
-    Command::cargo_bin("positional_arg")
+fn test_maybe_stdin_positional_arg() {
+    Command::cargo_bin("maybe_stdin_positional_arg")
         .unwrap()
         .args(["FIRST", "--second", "SECOND"])
         .assert()
@@ -13,7 +15,7 @@ fn test_positional_arg() {
         .stdout(predicate::str::starts_with(
             r#"Args { first: "FIRST", second: Some("SECOND") }"#,
         ));
-    Command::cargo_bin("positional_arg")
+    Command::cargo_bin("maybe_stdin_positional_arg")
         .unwrap()
         .args(["-", "--second", "SECOND"])
         .write_stdin("TESTING")
@@ -22,7 +24,7 @@ fn test_positional_arg() {
         .stdout(predicate::str::starts_with(
             r#"Args { first: "TESTING", second: Some("SECOND") }"#,
         ));
-    Command::cargo_bin("positional_arg")
+    Command::cargo_bin("maybe_stdin_positional_arg")
         .unwrap()
         .args(["FIRST"])
         .write_stdin("TESTING")
@@ -34,8 +36,8 @@ fn test_positional_arg() {
 }
 
 #[test]
-fn test_optional_arg() {
-    Command::cargo_bin("optional_arg")
+fn test_maybe_stdin_optional_arg() {
+    Command::cargo_bin("maybe_stdin_optional_arg")
         .unwrap()
         .args(["FIRST", "--second", "2"])
         .assert()
@@ -43,7 +45,7 @@ fn test_optional_arg() {
         .stdout(predicate::str::starts_with(
             r#"Args { first: "FIRST", second: Some(2) }"#,
         ));
-    Command::cargo_bin("optional_arg")
+    Command::cargo_bin("maybe_stdin_optional_arg")
         .unwrap()
         .write_stdin("2\n")
         .args(["FIRST", "--second", "-"])
@@ -52,7 +54,7 @@ fn test_optional_arg() {
         .stdout(predicate::str::starts_with(
             r#"Args { first: "FIRST", second: Some(2) }"#,
         ));
-    Command::cargo_bin("optional_arg")
+    Command::cargo_bin("maybe_stdin_optional_arg")
         .unwrap()
         .args(["FIRST"])
         .write_stdin("TESTING")
@@ -64,8 +66,8 @@ fn test_optional_arg() {
 }
 
 #[test]
-fn test_stdin_twice() {
-    Command::cargo_bin("stdin_twice")
+fn test_maybe_stdin_twice() {
+    Command::cargo_bin("maybe_stdin_twice")
         .unwrap()
         .args(["FIRST", "2"])
         .assert()
@@ -73,7 +75,7 @@ fn test_stdin_twice() {
         .stdout(predicate::str::starts_with(
             r#"Args { first: "FIRST", second: 2 }"#,
         ));
-    Command::cargo_bin("stdin_twice")
+    Command::cargo_bin("maybe_stdin_twice")
         .unwrap()
         .write_stdin("2")
         .args(["FIRST", "-"])
@@ -84,13 +86,118 @@ fn test_stdin_twice() {
         ));
 
     // Actually using stdin twice will fail because there's no value the second time
-    Command::cargo_bin("stdin_twice")
+    Command::cargo_bin("maybe_stdin_twice")
         .unwrap()
         .write_stdin("3")
         .args(["-", "-"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            StdInError::StdInRepeatedUse.to_string(),
+            StdinError::StdInRepeatedUse.to_string(),
+        ));
+}
+
+#[test]
+fn test_file_or_stdin_positional_arg() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    fs::write(&tmp, "FILE").expect("couldn't write to temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::cargo_bin("file_or_stdin_positional_arg")
+        .unwrap()
+        .args([&tmp_path, "--second", "SECOND"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FILE", second: Some("SECOND") }"#,
+        ));
+    Command::cargo_bin("file_or_stdin_positional_arg")
+        .unwrap()
+        .args(["-", "--second", "SECOND"])
+        .write_stdin("STDIN")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "STDIN", second: Some("SECOND") }"#,
+        ));
+    Command::cargo_bin("file_or_stdin_positional_arg")
+        .unwrap()
+        .args([&tmp_path])
+        .write_stdin("TESTING")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FILE", second: None }"#,
+        ));
+}
+
+#[test]
+fn test_file_or_stdin_optional_arg() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    // In this case, --second is `Option<FileOrStdin<u32>>` so we'll have a number in the file
+    fs::write(&tmp, "2").expect("couldn't write to temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::cargo_bin("file_or_stdin_optional_arg")
+        .unwrap()
+        .args(["FIRST", "--second", &tmp_path])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FIRST", second: Some(2) }"#,
+        ));
+    Command::cargo_bin("file_or_stdin_optional_arg")
+        .unwrap()
+        .write_stdin("2\n")
+        .args(["FIRST", "--second", "-"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FIRST", second: Some(2) }"#,
+        ));
+    Command::cargo_bin("file_or_stdin_optional_arg")
+        .unwrap()
+        .args(["FIRST"])
+        .write_stdin("TESTING")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FIRST", second: None }"#,
+        ));
+}
+
+#[test]
+fn test_file_or_stdin_twice() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    fs::write(&tmp, "FILE").expect("couldn't write to temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::cargo_bin("file_or_stdin_twice")
+        .unwrap()
+        .args([&tmp_path, "2"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FILE", second: 2 }"#,
+        ));
+    Command::cargo_bin("file_or_stdin_twice")
+        .unwrap()
+        .write_stdin("2")
+        .args([&tmp_path, "-"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"Args { first: "FILE", second: 2 }"#,
+        ));
+
+    // Actually using stdin twice will fail because there's no value the second time
+    Command::cargo_bin("file_or_stdin_twice")
+        .unwrap()
+        .write_stdin("3")
+        .args(["-", "-"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            StdinError::StdInRepeatedUse.to_string(),
         ));
 }

@@ -1,6 +1,6 @@
 [package]
 name = "clap-stdin"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
 description = "Provides a type for easily accepting Clap arguments from stdin"
@@ -25,25 +25,49 @@ anyhow = "1.0"
 assert_cmd = "2.0.10"
 predicates = "3.0.2"
 clap = { version = "4.2.1", features = ["derive"]}
+tempfile = "3.5.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 # These bins are only used for testing
 [[bin]]
-name = "positional_arg"
-path = "tests/fixtures/positional_arg.rs"
+name = "maybe_stdin_positional_arg"
+path = "tests/fixtures/maybe_stdin_positional_arg.rs"
 test = false
 bench = false
 required-features = ["test_bin"]
 
 [[bin]]
-name = "optional_arg"
-path = "tests/fixtures/optional_arg.rs"
+name = "maybe_stdin_optional_arg"
+path = "tests/fixtures/maybe_stdin_optional_arg.rs"
 test = false
 bench = false
 required-features = ["test_bin"]
 
 [[bin]]
-name = "stdin_twice"
-path = "tests/fixtures/stdin_twice.rs"
+name = "maybe_stdin_twice"
+path = "tests/fixtures/maybe_stdin_twice.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "file_or_stdin_positional_arg"
+path = "tests/fixtures/file_or_stdin_positional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "file_or_stdin_optional_arg"
+path = "tests/fixtures/file_or_stdin_optional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "file_or_stdin_twice"
+path = "tests/fixtures/file_or_stdin_twice.rs"
 test = false
 bench = false
 required-features = ["test_bin"]

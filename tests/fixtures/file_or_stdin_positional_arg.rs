@@ -1,10 +1,10 @@
 use clap::Parser;
 
-use clap_stdin::MaybeStdIn;
+use clap_stdin::FileOrStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
-    first: MaybeStdIn<String>,
+    first: FileOrStdin,
     #[clap(short, long)]
     second: Option<String>,
 }

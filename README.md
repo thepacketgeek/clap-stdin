@@ -1,18 +1,23 @@
 # clap-stdin [![Build](https://img.shields.io/github/actions/workflow/status/thepacketgeek/clap-stdin/ci-build.yml?branch=main)](https://github.com/thepacketgeek/clap-stdin/actions/workflows/ci-build.yml)
 
-This library offers a wrapper type for [`clap`](https://docs.rs/clap) `Arg`s that can
-either be passed via CLI argument (positional or optional) or read in from `stdin`. When
-an `Arg` value is to be read from `stdin`, the user will pass the commonly used `stdin` alias: `-`
+This library offers two wrapper types for [`clap`](https://docs.rs/clap) `Arg`s that help
+for cases where values may be passed in via `stdin`. When an `Arg` value is to be read
+from `stdin`, the user will pass the commonly used `stdin` alias: `-`
+
+- `MaybeStdin`: Used when a value can be passed in via args OR `stdin`
+- `FileOrStdin`: Used when a value can be read in from a file OR `stdin`
+
+## `MaybeStdin`
 
 Example usage with `clap`'s `derive` feature for a positional argument:
 ```rust,no_run
 use clap::Parser;
 
-use clap_stdin::MaybeStdIn;
+use clap_stdin::MaybeStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
-    value: MaybeStdIn<String>,
+    value: MaybeStdin<String>,
 }
 
 let args = Args::parse();
@@ -27,15 +32,15 @@ value=testing
 ```
 
 ## Compatible Types
-[`MaybeStdIn`] can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
+[`MaybeStdin`] can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
 ```rust
 use std::path::PathBuf;
 use clap::Parser;
-use clap_stdin::MaybeStdIn;
+use clap_stdin::MaybeStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
-    path: MaybeStdIn<PathBuf>,
+    path: MaybeStdin<PathBuf>,
 }
 ```
 
@@ -43,19 +48,71 @@ struct Args {
 $ pwd | ./example -
 ```
 
-## Using `MaybeStdIn` multiple times
-[`MaybeStdIn`] will check at runtime if `stdin` is being read from multiple times. You can use this
+## `FileOrStdin`
+
+Example usage with `clap`'s `derive` feature for a positional argument:
+```rust,no_run
+use clap::Parser;
+
+use clap_stdin::FileOrStdin;
+
+#[derive(Debug, Parser)]
+struct Args {
+    contents: FileOrStdin,
+}
+
+let args = Args::parse();
+println!("contents={}", args.contents);
+```
+
+Calling this CLI:
+```sh
+# using stdin for positional arg value
+$ echo "testing" | cargo run -- -
+contents=testing
+
+# using filename for positional arg value
+$ echo "testing" > contents.txt
+$ cargo run -- contents.txt
+contents=testing
+```
+
+## Compatible Types
+[`FileOrStdin`] can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
+```rust
+use std::path::PathBuf;
+use clap::Parser;
+use clap_stdin::FileOrStdin;
+
+#[derive(Debug, Parser)]
+struct Args {
+    path: FileOrStdin<u32>,
+}
+```
+
+```sh
+# Value from stdin
+$ wc ~/myfile.txt -l | ./example -
+
+# Value from file
+$ cat myfile.txt
+42
+$ .example myfile.txt
+```
+
+## Using `MaybeStdin` or `FileOrStdin` multiple times
+Both [`MaybeStdin`] and [`FileOrStdin`] will check at runtime if `stdin` is being read from multiple times. You can use this
 as a feature if you have mutually exclusive args that should both be able to read from stdin, but know
-that the user will receive an error if 2+ `MaybeStdIn` args receive the "-" value.
+that the user will receive an error if 2+ `MaybeStdin` args receive the "-" value.
 
 For example, this compiles:
 ```rust
-use clap_stdin::MaybeStdIn;
+use clap_stdin::{FileOrStdin, MaybeStdin};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    first: MaybeStdIn<String>,
-    second: MaybeStdIn<u32>,
+    first: FileOrStdin,
+    second: MaybeStdin<u32>,
 }
 ```
 
