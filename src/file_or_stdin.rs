@@ -71,9 +71,9 @@ where
     }
 }
 
-impl FileOrStdin {
+impl<T> FileOrStdin<T> {
     /// Extract the inner value from the wrapper
-    pub fn into_inner(self) -> String {
+    pub fn into_inner(self) -> T {
         self.inner
     }
 }
@@ -96,8 +96,8 @@ where
     }
 }
 
-impl std::ops::Deref for FileOrStdin {
-    type Target = String;
+impl<T> std::ops::Deref for FileOrStdin<T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
