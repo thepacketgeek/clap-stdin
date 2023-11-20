@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::{self, Read};
+use std::marker::PhantomData;
 use std::str::FromStr;
 
 use super::{Source, StdinError};
@@ -14,90 +15,86 @@ use super::{Source, StdinError};
 ///
 /// #[derive(Debug, Parser)]
 /// struct Args {
-///     contents: FileOrStdin,
+///     input: FileOrStdin,
 /// }
 ///
+/// # fn main() -> anyhow::Result<()> {
 /// if let Ok(args) = Args::try_parse() {
-///     println!("contents={}", args.contents);
+///     println!("input={}", args.input.contents()?);
 /// }
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// ```sh
-/// $ cat <filename> | ./example -
-/// <filename> contents
-/// ```
+/// $ echo "1 2 3 4" > input.txt
+/// $ cat input.txt | ./example -
+/// 1 2 3 4
 ///
-/// ```sh
-/// $ ./example <filename>
-/// <filename> contents
+/// $ ./example input.txt
+/// 1 2 3 4
 /// ```
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FileOrStdin<T = String> {
-    /// Source of the contents
     pub source: Source,
-    inner: T,
+    _type: PhantomData<T>,
 }
 
-impl<T> FromStr for FileOrStdin<T>
-where
-    T: FromStr,
-    <T as FromStr>::Err: std::fmt::Display,
-{
+impl<T> FileOrStdin<T> {
+    /// Read the entire contents from the input source, returning T::from_str
+    pub fn contents(self) -> Result<T, StdinError>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: std::fmt::Display,
+    {
+        let mut reader = self.into_reader()?;
+        let mut input = String::new();
+        let _ = reader.read_to_string(&mut input)?;
+        T::from_str(input.trim_end()).map_err(|e| StdinError::FromStr(format!("{e}")))
+    }
+
+    /// Create a reader from the source, to allow user flexibility of
+    /// how to read and parse (e.g. all at once or in chunks)
+    ///
+    /// ```no_run
+    /// use std::io::Read;
+    ///
+    /// use clap_stdin::FileOrStdin;
+    /// use clap::Parser;
+    ///
+    /// #[derive(Parser)]
+    /// struct Args {
+    ///   input: FileOrStdin,
+    /// }
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// let args = Args::parse();
+    /// let mut reader = args.input.into_reader()?;
+    /// let mut buf = vec![0;8];
+    /// reader.read_exact(&mut buf)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn into_reader(&self) -> Result<impl io::Read, StdinError> {
+        let input: Box<dyn std::io::Read + 'static> = match &self.source {
+            Source::Stdin => Box::new(std::io::stdin()),
+            Source::Arg(filepath) => {
+                let f = fs::File::open(filepath)?;
+                Box::new(f)
+            }
+        };
+        Ok(input)
+    }
+}
+
+impl<T> FromStr for FileOrStdin<T> {
     type Err = StdinError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let source = Source::from_str(s)?;
-        match &source {
-            Source::Stdin => {
-                let stdin = io::stdin();
-                let mut input = String::new();
-                stdin.lock().read_to_string(&mut input)?;
-                Ok(T::from_str(input.trim_end())
-                    .map_err(|e| StdinError::FromStr(format!("{e}")))
-                    .map(|val| Self { source, inner: val })?)
-            }
-            Source::Arg(filepath) => Ok(T::from_str(&fs::read_to_string(filepath)?)
-                .map_err(|e| StdinError::FromStr(format!("{e}")))
-                .map(|val| FileOrStdin { source, inner: val })?),
-        }
-    }
-}
-
-impl<T> FileOrStdin<T> {
-    /// Extract the inner value from the wrapper
-    pub fn into_inner(self) -> T {
-        self.inner
-    }
-}
-
-impl<T> std::fmt::Display for FileOrStdin<T>
-where
-    T: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.inner.fmt(f)
-    }
-}
-
-impl<T> std::fmt::Debug for FileOrStdin<T>
-where
-    T: std::fmt::Debug,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.inner.fmt(f)
-    }
-}
-
-impl<T> std::ops::Deref for FileOrStdin<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl std::ops::DerefMut for FileOrStdin {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        Ok(Self {
+            source,
+            _type: PhantomData,
+        })
     }
 }

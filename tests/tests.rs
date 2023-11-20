@@ -109,16 +109,16 @@ fn test_file_or_stdin_positional_arg() {
         .assert()
         .success()
         .stdout(predicate::str::starts_with(
-            r#"Args { first: "FILE", second: Some("SECOND") }"#,
+            r#"FIRST: FILE; SECOND: Some("SECOND")"#,
         ));
     Command::cargo_bin("file_or_stdin_positional_arg")
         .unwrap()
-        .args(["-", "--second", "SECOND"])
+        .args(["--second", "SECOND"])
         .write_stdin("STDIN")
         .assert()
         .success()
         .stdout(predicate::str::starts_with(
-            r#"Args { first: "STDIN", second: Some("SECOND") }"#,
+            r#"FIRST: STDIN; SECOND: Some("SECOND")"#,
         ));
     Command::cargo_bin("file_or_stdin_positional_arg")
         .unwrap()
@@ -126,9 +126,7 @@ fn test_file_or_stdin_positional_arg() {
         .write_stdin("TESTING")
         .assert()
         .success()
-        .stdout(predicate::str::starts_with(
-            r#"Args { first: "FILE", second: None }"#,
-        ));
+        .stdout(predicate::str::starts_with(r#"FIRST: FILE; SECOND: None"#));
 }
 
 #[test]
@@ -144,7 +142,7 @@ fn test_file_or_stdin_optional_arg() {
         .assert()
         .success()
         .stdout(predicate::str::starts_with(
-            r#"Args { first: "FIRST", second: Some(2) }"#,
+            r#"FIRST: FIRST, SECOND: Some(2)"#,
         ));
     Command::cargo_bin("file_or_stdin_optional_arg")
         .unwrap()
@@ -153,7 +151,7 @@ fn test_file_or_stdin_optional_arg() {
         .assert()
         .success()
         .stdout(predicate::str::starts_with(
-            r#"Args { first: "FIRST", second: Some(2) }"#,
+            r#"FIRST: FIRST, SECOND: Some(2)"#,
         ));
     Command::cargo_bin("file_or_stdin_optional_arg")
         .unwrap()
@@ -161,9 +159,7 @@ fn test_file_or_stdin_optional_arg() {
         .write_stdin("TESTING")
         .assert()
         .success()
-        .stdout(predicate::str::starts_with(
-            r#"Args { first: "FIRST", second: None }"#,
-        ));
+        .stdout(predicate::str::starts_with(r#"FIRST: FIRST, SECOND: None"#));
 }
 
 #[test]
@@ -177,18 +173,14 @@ fn test_file_or_stdin_twice() {
         .args([&tmp_path, "2"])
         .assert()
         .success()
-        .stdout(predicate::str::starts_with(
-            r#"Args { first: "FILE", second: 2 }"#,
-        ));
+        .stdout(predicate::str::starts_with(r#"FIRST: FILE; SECOND: 2"#));
     Command::cargo_bin("file_or_stdin_twice")
         .unwrap()
         .write_stdin("2")
         .args([&tmp_path, "-"])
         .assert()
         .success()
-        .stdout(predicate::str::starts_with(
-            r#"Args { first: "FILE", second: 2 }"#,
-        ));
+        .stdout(predicate::str::starts_with(r#"FIRST: FILE; SECOND: 2"#));
 
     // Actually using stdin twice will fail because there's no value the second time
     Command::cargo_bin("file_or_stdin_twice")

@@ -58,23 +58,26 @@ use clap_stdin::FileOrStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
-    contents: FileOrStdin,
+    input: FileOrStdin,
 }
 
+# fn main() -> anyhow::Result<()> {
 let args = Args::parse();
-println!("contents={}", args.contents);
+println!("input={}", args.input.contents()?);
+# Ok(())
+# }
 ```
 
 Calling this CLI:
 ```sh
 # using stdin for positional arg value
 $ echo "testing" | cargo run -- -
-contents=testing
+input=testing
 
 # using filename for positional arg value
-$ echo "testing" > contents.txt
-$ cargo run -- contents.txt
-contents=testing
+$ echo "testing" > input.txt
+$ cargo run -- input.txt
+input=testing
 ```
 
 ## Compatible Types
@@ -98,6 +101,39 @@ $ wc ~/myfile.txt -l | ./example -
 $ cat myfile.txt
 42
 $ .example myfile.txt
+```
+
+## Reading from Stdin without special characters
+When using [`MaybeStdin`] or [`FileOrStdin`], you can allow your users to omit the "-" character to read from `stdin` by providing a `default_value` to clap. This works with positional and optional args:
+
+```rust,no_run
+use clap::Parser;
+
+use clap_stdin::FileOrStdin;
+
+#[derive(Debug, Parser)]
+struct Args {
+    #[clap(default_value = "-")]
+    input: FileOrStdin,
+}
+
+# fn main() -> anyhow::Result<()> {
+let args = Args::parse();
+println!("input={}", args.input.contents()?);
+# Ok(())
+# }
+```
+
+Calling this CLI:
+```sh
+# using stdin for positional arg value
+$ echo "testing" | cargo run
+input=testing
+
+# using filename for positional arg value
+$ echo "testing" > input.txt
+$ cargo run -- input.txt
+input=testing
 ```
 
 ## Using `MaybeStdin` or `FileOrStdin` multiple times
