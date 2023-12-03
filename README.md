@@ -32,7 +32,7 @@ value=testing
 ```
 
 ## Compatible Types
-[`MaybeStdin`] can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
+[`MaybeStdin`] can wrap any type that matches the trait bounds for `Arg`: `FromStr` and `Clone`
 ```rust
 use std::path::PathBuf;
 use clap::Parser;
@@ -78,7 +78,7 @@ contents=testing
 ```
 
 ## Compatible Types
-[`FileOrStdin`] can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
+[`FileOrStdin`] can wrap any type that matches the trait bounds for `Arg`: `FromStr` and `Clone`
 ```rust
 use std::path::PathBuf;
 use clap::Parser;

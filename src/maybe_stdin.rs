@@ -6,7 +6,7 @@ use super::{StdinError, STDIN_HAS_BEEN_USED};
 
 /// Wrapper struct to parse arg values from `stdin`
 ///
-/// `MaybeStdin` can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
+/// `MaybeStdin` can wrap any type that matches the trait bounds for `Arg`: `FromStr` and `Clone`
 /// ```rust
 /// use std::path::PathBuf;
 /// use clap::Parser;

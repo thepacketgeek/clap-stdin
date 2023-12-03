@@ -7,7 +7,7 @@ use super::{StdinError, STDIN_HAS_BEEN_USED};
 
 /// Wrapper struct to either read in a file or contents from `stdin`
 ///
-/// `FileOrStdin` can wrap any time that matches the trait bounds for `Arg`: `FromStr` and `Clone`
+/// `FileOrStdin` can wrap any type that matches the trait bounds for `Arg`: `FromStr` and `Clone`
 /// ```rust
 /// use std::path::PathBuf;
 /// use clap::Parser;
@@ -31,7 +31,7 @@ use super::{StdinError, STDIN_HAS_BEEN_USED};
 /// ```sh
 /// $ ./example <filename>
 /// <filename> contents
-/// ``o
+/// ```
 #[derive(Clone)]
 pub struct FileOrStdin<T = String> {
     inner: T,
