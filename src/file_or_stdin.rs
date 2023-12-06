@@ -1,9 +1,8 @@
 use std::fs;
 use std::io::{self, Read};
 use std::str::FromStr;
-use std::sync::atomic::Ordering;
 
-use super::{StdinError, STDIN_HAS_BEEN_USED};
+use super::{Source, StdinError};
 
 /// Wrapper struct to either read in a file or contents from `stdin`
 ///
@@ -34,13 +33,9 @@ use super::{StdinError, STDIN_HAS_BEEN_USED};
 /// ```
 #[derive(Clone)]
 pub struct FileOrStdin<T = String> {
+    /// Source of the contents
+    pub source: Source,
     inner: T,
-}
-
-impl<T> FileOrStdin<T> {
-    fn new(s: T) -> Self {
-        Self { inner: s }
-    }
 }
 
 impl<T> FromStr for FileOrStdin<T>
@@ -51,22 +46,19 @@ where
     type Err = StdinError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "-" => {
-                if STDIN_HAS_BEEN_USED.load(std::sync::atomic::Ordering::Acquire) {
-                    return Err(StdinError::StdInRepeatedUse);
-                }
-                STDIN_HAS_BEEN_USED.store(true, Ordering::SeqCst);
+        let source = Source::from_str(s)?;
+        match &source {
+            Source::Stdin => {
                 let stdin = io::stdin();
                 let mut input = String::new();
                 stdin.lock().read_to_string(&mut input)?;
                 Ok(T::from_str(input.trim_end())
                     .map_err(|e| StdinError::FromStr(format!("{e}")))
-                    .map(|val| FileOrStdin::new(val))?)
+                    .map(|val| Self { source, inner: val })?)
             }
-            filepath => Ok(T::from_str(&fs::read_to_string(filepath)?)
+            Source::Arg(filepath) => Ok(T::from_str(&fs::read_to_string(filepath)?)
                 .map_err(|e| StdinError::FromStr(format!("{e}")))
-                .map(|val| FileOrStdin::new(val))?),
+                .map(|val| FileOrStdin { source, inner: val })?),
         }
     }
 }

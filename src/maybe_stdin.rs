@@ -1,8 +1,7 @@
 use std::io::{self, Read};
 use std::str::FromStr;
-use std::sync::atomic::Ordering;
 
-use super::{StdinError, STDIN_HAS_BEEN_USED};
+use super::{Source, StdinError};
 
 /// Wrapper struct to parse arg values from `stdin`
 ///
@@ -28,13 +27,9 @@ use super::{StdinError, STDIN_HAS_BEEN_USED};
 /// ```
 #[derive(Clone)]
 pub struct MaybeStdin<T> {
+    /// Source of the contents
+    pub source: Source,
     inner: T,
-}
-
-impl<T> MaybeStdin<T> {
-    fn new(inner: T) -> Self {
-        Self { inner }
-    }
 }
 
 impl<T> FromStr for MaybeStdin<T>
@@ -45,22 +40,19 @@ where
     type Err = StdinError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "-" => {
-                if STDIN_HAS_BEEN_USED.load(std::sync::atomic::Ordering::Acquire) {
-                    return Err(StdinError::StdInRepeatedUse);
-                }
-                STDIN_HAS_BEEN_USED.store(true, Ordering::SeqCst);
+        let source = Source::from_str(s)?;
+        match &source {
+            Source::Stdin => {
                 let stdin = io::stdin();
                 let mut input = String::new();
                 stdin.lock().read_to_string(&mut input)?;
                 Ok(T::from_str(input.trim_end())
                     .map_err(|e| StdinError::FromStr(format!("{e}")))
-                    .map(|val| MaybeStdin::new(val))?)
+                    .map(|val| Self { source, inner: val })?)
             }
-            other => Ok(T::from_str(other)
+            Source::Arg(value) => Ok(T::from_str(value)
                 .map_err(|e| StdinError::FromStr(format!("{e}")))
-                .map(|val| MaybeStdin::new(val))?),
+                .map(|val| Self { source, inner: val })?),
         }
     }
 }
