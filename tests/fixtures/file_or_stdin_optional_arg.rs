@@ -11,5 +11,9 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    println!("{args:?}");
+    println!(
+        "FIRST: {}, SECOND: {:?}",
+        args.first,
+        args.second.map(|second| second.contents().unwrap()),
+    );
 }

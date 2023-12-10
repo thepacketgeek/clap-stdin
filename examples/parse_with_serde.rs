@@ -41,6 +41,6 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    eprintln!("{:?}", args.user);
+    eprintln!("{:?}", args.user.contents());
     Ok(())
 }
