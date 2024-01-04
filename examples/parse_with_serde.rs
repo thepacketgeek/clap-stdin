@@ -39,8 +39,17 @@ struct Args {
     user: FileOrStdin<User>,
 }
 
+#[cfg(not(feature = "tokio"))]
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    eprintln!("{:?}", args.user.contents());
+    eprintln!("{:?}", args.user.contents()?);
+    Ok(())
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+    eprintln!("{:?}", args.user.contents_async().await?);
     Ok(())
 }
