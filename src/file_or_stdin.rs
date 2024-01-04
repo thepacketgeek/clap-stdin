@@ -90,6 +90,22 @@ impl<T> FileOrStdin<T> {
 
     #[cfg(feature = "tokio")]
     /// Read the entire contents from the input source, returning T::from_str
+    /// ```rust,no_run
+    /// use clap::Parser;
+    /// use clap_stdin::FileOrStdin;
+    ///
+    /// #[derive(Debug, Parser)]
+    /// struct Args {
+    ///     input: FileOrStdin,
+    /// }
+    ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// let args = Args::parse();
+    /// println!("input={}", args.input.contents_async().await?);
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn contents_async(self) -> Result<T, StdinError>
     where
         T: FromStr,

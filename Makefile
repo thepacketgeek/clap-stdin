@@ -6,13 +6,15 @@ test: lint
 	cargo test --features tokio
 
 doc:
-	cargo doc
+	cargo doc --features tokio
 
 lint:
 	cargo fmt --message-format human -- --check
 	cargo check
-	RUSTDOCFLAGS=-Dwarnings cargo doc -q --no-deps --lib
+	cargo check --features tokio
+	RUSTDOCFLAGS=-Dwarnings cargo doc -q --no-deps --lib --features tokio
 	cargo clippy -q --no-deps -- -D warnings
+	cargo clippy -q --no-deps --features tokio -- -D warnings
 
 clean:
 	cargo clean
