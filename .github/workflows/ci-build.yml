@@ -26,8 +26,6 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: lint
       run: make lint
-    - name: clippy
-      run: cargo clippy --all-features --no-deps -- -D warnings
     - name: build (lib)
       run: cargo build --verbose
     - name: test
@@ -35,6 +33,4 @@ jobs:
         RUST_LOG: info
       run: make test
     - name: document
-      env:
-        RUSTDOCFLAGS: "-Dwarnings"
-      run: cargo doc --all-features
+      run: make doc

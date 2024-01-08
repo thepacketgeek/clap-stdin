@@ -13,21 +13,34 @@ repository = "https://github.com/thepacketgeek/clap-stdin"
 
 [features]
 default = []
+tokio = ["dep:tokio"]
 # This feature is used for testing with the bins below, since they are linked with deps and not dev-deps
 test_bin = ["clap"]
+test_bin_tokio = ["clap", "tokio"]
 
 [dependencies]
 thiserror = "1.0.40"
 clap = { version = "4.2.1", features = ["derive"], optional = true }
+tokio = { version = "1.35.1", features = [
+    "fs",
+    "io-std",
+    "io-util",
+], optional = true }
 
 [dev-dependencies]
 anyhow = "1.0"
 assert_cmd = "2.0.10"
 predicates = "3.0.2"
-clap = { version = "4.2.1", features = ["derive"]}
+clap = { version = "4.2.1", features = ["derive"] }
 tempfile = "3.5.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+tokio = { version = "1.35.1", features = ["rt", "macros"] }
+
+
+[[example]]
+name = "parse_with_serde"
+required-features = ["default"]
 
 # These bins are only used for testing
 [[bin]]

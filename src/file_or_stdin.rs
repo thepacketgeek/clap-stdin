@@ -1,7 +1,8 @@
-use std::fs;
-use std::io::{self, Read};
 use std::marker::PhantomData;
 use std::str::FromStr;
+
+#[cfg(feature = "tokio")]
+use tokio::io::AsyncReadExt;
 
 use super::{Source, StdinError};
 
@@ -47,6 +48,7 @@ impl<T> FileOrStdin<T> {
         T: FromStr,
         <T as FromStr>::Err: std::fmt::Display,
     {
+        use std::io::Read;
         let mut reader = self.into_reader()?;
         let mut input = String::new();
         let _ = reader.read_to_string(&mut input)?;
@@ -75,12 +77,77 @@ impl<T> FileOrStdin<T> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn into_reader(&self) -> Result<impl io::Read, StdinError> {
+    pub fn into_reader(&self) -> Result<impl std::io::Read, StdinError> {
         let input: Box<dyn std::io::Read + 'static> = match &self.source {
             Source::Stdin => Box::new(std::io::stdin()),
             Source::Arg(filepath) => {
-                let f = fs::File::open(filepath)?;
+                let f = std::fs::File::open(filepath)?;
                 Box::new(f)
+            }
+        };
+        Ok(input)
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Read the entire contents from the input source, returning T::from_str
+    /// ```rust,no_run
+    /// use clap::Parser;
+    /// use clap_stdin::FileOrStdin;
+    ///
+    /// #[derive(Debug, Parser)]
+    /// struct Args {
+    ///     input: FileOrStdin,
+    /// }
+    ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// let args = Args::parse();
+    /// println!("input={}", args.input.contents_async().await?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn contents_async(self) -> Result<T, StdinError>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: std::fmt::Display,
+    {
+        let mut reader = self.into_async_reader().await?;
+        let mut input = String::new();
+        let _ = reader.read_to_string(&mut input).await?;
+        T::from_str(input.trim_end()).map_err(|e| StdinError::FromStr(format!("{e}")))
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Create a reader from the source, to allow user flexibility of
+    /// how to read and parse (e.g. all at once or in chunks)
+    ///
+    /// ```no_run
+    /// use std::io::Read;
+    /// use tokio::io::AsyncReadExt;
+    ///
+    /// use clap_stdin::FileOrStdin;
+    /// use clap::Parser;
+    ///
+    /// #[derive(Parser)]
+    /// struct Args {
+    ///   input: FileOrStdin,
+    /// }
+    ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// let args = Args::parse();
+    /// let mut reader = args.input.into_async_reader().await?;
+    /// let mut buf = vec![0;8];
+    /// reader.read_exact(&mut buf).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn into_async_reader(&self) -> Result<impl tokio::io::AsyncRead, StdinError> {
+        let input: std::pin::Pin<Box<dyn tokio::io::AsyncRead + 'static>> = match &self.source {
+            Source::Stdin => Box::pin(tokio::io::stdin()),
+            Source::Arg(filepath) => {
+                let f = tokio::fs::File::open(filepath).await?;
+                Box::pin(f)
             }
         };
         Ok(input)

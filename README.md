@@ -136,7 +136,10 @@ $ cargo run -- input.txt
 input=testing
 ```
 
-## Using `MaybeStdin` or `FileOrStdin` multiple times
+## Async Support
+`FileOrStdin` can also be used with [`tokio::io::AsyncRead`](https://docs.rs/tokio/latest/tokio/io/trait.AsyncRead.html) using the `tokio` feature. See [`FileOrStdin::contents_async`] and [`FileOrStdin::into_async_reader`] for examples.
+
+# Using `MaybeStdin` or `FileOrStdin` multiple times
 Both [`MaybeStdin`] and [`FileOrStdin`] will check at runtime if `stdin` is being read from multiple times. You can use this
 as a feature if you have mutually exclusive args that should both be able to read from stdin, but know
 that the user will receive an error if 2+ `MaybeStdin` args receive the "-" value.
