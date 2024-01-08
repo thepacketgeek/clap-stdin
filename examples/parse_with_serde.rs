@@ -6,12 +6,15 @@
 //! Example usage:
 //! ```sh
 //! # via stdin
-//! $ echo '{ "name": "Trinity", "age": 30 }' | cargo run --example parse_with_serde -- -
+//! $ echo '{ "name": "Trinity", "age": 30 }' | cargo run --example parse_with_serde
 //!
 //! # via file read
 //! $ cat contents.json
 //! '{ "name": "Trinity", "age": 30 }'
 //! $ cargo run --example parse_with_serde -- ./contents.json
+//!
+//! # Using tokio AsyncRead
+//! $ cargo run --features tokio --example parse_with_serde -- ./contents.json
 //! ```
 use std::str::FromStr;
 
@@ -35,7 +38,8 @@ impl FromStr for User {
 
 #[derive(Debug, Parser)]
 struct Args {
-    /// Parsed user from a file or stdin json
+    /// Parsed user from json, provided via a filepath (or leave blank to read from stdin)
+    #[clap(default_value = "-")]
     user: FileOrStdin<User>,
 }
 
