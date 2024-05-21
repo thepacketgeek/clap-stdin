@@ -83,7 +83,6 @@ input=testing
 ## Compatible Types
 [`FileOrStdin`] can wrap any type that matches the trait bounds for `Arg`: `FromStr` and `Clone`
 ```rust
-use std::path::PathBuf;
 use clap::Parser;
 use clap_stdin::FileOrStdin;
 
