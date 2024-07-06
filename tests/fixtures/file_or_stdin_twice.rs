@@ -9,13 +9,15 @@ struct Args {
 }
 
 #[cfg(feature = "test_bin")]
-fn main() {
+fn main() -> Result<(), String> {
     let args = Args::parse();
     println!(
-        "FIRST: {}; SECOND: {}",
-        args.first.contents().unwrap(),
+        "FIRST: {}; SECOND: {:?}",
+        args.first.contents().map_err(|e| format!("{e}"))?,
         args.second
     );
+
+    Ok(())
 }
 
 #[cfg(feature = "test_bin_tokio")]
@@ -24,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     println!(
         "FIRST: {}; SECOND: {}",
-        args.first.contents_async().unwrap(),
+        args.first.contents_async()?,
         args.second
     );
 }

@@ -37,11 +37,21 @@ use super::{Source, StdinError};
 /// ```
 #[derive(Debug, Clone)]
 pub struct FileOrStdin<T = String> {
-    pub source: Source,
+    source: Source,
     _type: PhantomData<T>,
 }
 
 impl<T> FileOrStdin<T> {
+    /// Was this value read from stdin
+    pub fn is_stdin(&self) -> bool {
+        matches!(self.source, Source::Stdin)
+    }
+
+    /// Was this value read from a file (path passed in from argument values)
+    pub fn is_file(&self) -> bool {
+        !self.is_stdin()
+    }
+
     /// Read the entire contents from the input source, returning T::from_str
     pub fn contents(self) -> Result<T, StdinError>
     where
@@ -77,15 +87,8 @@ impl<T> FileOrStdin<T> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn into_reader(&self) -> Result<impl std::io::Read, StdinError> {
-        let input: Box<dyn std::io::Read + 'static> = match &self.source {
-            Source::Stdin => Box::new(std::io::stdin()),
-            Source::Arg(filepath) => {
-                let f = std::fs::File::open(filepath)?;
-                Box::new(f)
-            }
-        };
-        Ok(input)
+    pub fn into_reader(self) -> Result<impl std::io::Read, StdinError> {
+        self.source.into_reader()
     }
 
     #[cfg(feature = "tokio")]
