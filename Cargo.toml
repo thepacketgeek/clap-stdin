@@ -84,3 +84,10 @@ path = "tests/fixtures/file_or_stdin_twice.rs"
 test = false
 bench = false
 required-features = ["test_bin"]
+
+[[bin]]
+name = "is_stdin"
+path = "tests/fixtures/is_stdin.rs"
+test = false
+bench = false
+required-features = ["test_bin"]

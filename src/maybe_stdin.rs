@@ -27,6 +27,14 @@ use super::{Source, StdinError};
 #[derive(Clone)]
 pub struct MaybeStdin<T> {
     inner: T,
+    is_stdin: bool,
+}
+
+impl<T> MaybeStdin<T> {
+    /// Was this value read from stdin
+    pub fn is_stdin(&self) -> bool {
+        self.is_stdin
+    }
 }
 
 impl<T> FromStr for MaybeStdin<T>
@@ -38,9 +46,13 @@ where
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let source = Source::from_str(s)?;
+        let is_stdin = matches!(source, Source::Stdin);
         T::from_str(source.get_value()?.trim())
             .map_err(|e| StdinError::FromStr(format!("{e}")))
-            .map(|val| Self { inner: val })
+            .map(|val| Self {
+                inner: val,
+                is_stdin,
+            })
     }
 }
 

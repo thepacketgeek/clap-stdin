@@ -193,3 +193,37 @@ fn test_file_or_stdin_twice() {
             StdinError::StdInRepeatedUse.to_string(),
         ));
 }
+
+#[test]
+fn test_is_stdin() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    fs::write(&tmp, "FILE").expect("couldn't write to temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::cargo_bin("is_stdin")
+        .unwrap()
+        .args([&tmp_path, "2"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"FIRST is_stdin: false; SECOND is_stdin: false"#,
+        ));
+    Command::cargo_bin("is_stdin")
+        .unwrap()
+        .write_stdin("2")
+        .args([&tmp_path, "-"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"FIRST is_stdin: false; SECOND is_stdin: true"#,
+        ));
+    Command::cargo_bin("is_stdin")
+        .unwrap()
+        .write_stdin("testing")
+        .args(["-", "2"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"FIRST is_stdin: true; SECOND is_stdin: false"#,
+        ));
+}
