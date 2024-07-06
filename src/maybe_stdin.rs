@@ -1,4 +1,3 @@
-use std::io::{self, Read};
 use std::str::FromStr;
 
 use super::{Source, StdinError};
@@ -27,8 +26,6 @@ use super::{Source, StdinError};
 /// ```
 #[derive(Clone)]
 pub struct MaybeStdin<T> {
-    /// Source of the contents
-    pub source: Source,
     inner: T,
 }
 
@@ -41,19 +38,9 @@ where
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let source = Source::from_str(s)?;
-        match &source {
-            Source::Stdin => {
-                let stdin = io::stdin();
-                let mut input = String::new();
-                stdin.lock().read_to_string(&mut input)?;
-                Ok(T::from_str(input.trim_end())
-                    .map_err(|e| StdinError::FromStr(format!("{e}")))
-                    .map(|val| Self { source, inner: val })?)
-            }
-            Source::Arg(value) => Ok(T::from_str(value)
-                .map_err(|e| StdinError::FromStr(format!("{e}")))
-                .map(|val| Self { source, inner: val })?),
-        }
+        T::from_str(source.get_value()?.trim())
+            .map_err(|e| StdinError::FromStr(format!("{e}")))
+            .map(|val| Self { inner: val })
     }
 }
 

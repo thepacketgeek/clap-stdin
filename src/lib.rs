@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use std::io;
+use std::io::{self, Read};
 use std::str::FromStr;
 use std::sync::atomic::AtomicBool;
 
@@ -9,11 +9,11 @@ pub use maybe_stdin::MaybeStdin;
 mod file_or_stdin;
 pub use file_or_stdin::FileOrStdin;
 
-static STDIN_HAS_BEEN_USED: AtomicBool = AtomicBool::new(false);
+static STDIN_HAS_BEEN_READ: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, thiserror::Error)]
 pub enum StdinError {
-    #[error("stdin argument used more than once")]
+    #[error("stdin read from more than once")]
     StdInRepeatedUse,
     #[error(transparent)]
     StdIn(#[from] io::Error),
@@ -23,9 +23,44 @@ pub enum StdinError {
 
 /// Source of the value contents will be either from `stdin` or a CLI arg provided value
 #[derive(Clone)]
-pub enum Source {
+pub(crate) enum Source {
     Stdin,
     Arg(String),
+}
+
+impl Source {
+    pub(crate) fn into_reader(self) -> Result<impl std::io::Read, StdinError> {
+        let input: Box<dyn std::io::Read + 'static> = match self {
+            Source::Stdin => {
+                if STDIN_HAS_BEEN_READ.load(std::sync::atomic::Ordering::Acquire) {
+                    return Err(StdinError::StdInRepeatedUse);
+                }
+                STDIN_HAS_BEEN_READ.store(true, std::sync::atomic::Ordering::SeqCst);
+                Box::new(std::io::stdin())
+            }
+            Source::Arg(filepath) => {
+                let f = std::fs::File::open(filepath)?;
+                Box::new(f)
+            }
+        };
+        Ok(input)
+    }
+
+    pub(crate) fn get_value(self) -> Result<String, StdinError> {
+        match self {
+            Source::Stdin => {
+                if STDIN_HAS_BEEN_READ.load(std::sync::atomic::Ordering::Acquire) {
+                    return Err(StdinError::StdInRepeatedUse);
+                }
+                STDIN_HAS_BEEN_READ.store(true, std::sync::atomic::Ordering::SeqCst);
+                let stdin = io::stdin();
+                let mut input = String::new();
+                stdin.lock().read_to_string(&mut input)?;
+                Ok(input)
+            }
+            Source::Arg(value) => Ok(value),
+        }
+    }
 }
 
 impl FromStr for Source {
@@ -33,13 +68,7 @@ impl FromStr for Source {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "-" => {
-                if STDIN_HAS_BEEN_USED.load(std::sync::atomic::Ordering::Acquire) {
-                    return Err(StdinError::StdInRepeatedUse);
-                }
-                STDIN_HAS_BEEN_USED.store(true, std::sync::atomic::Ordering::SeqCst);
-                Ok(Self::Stdin)
-            }
+            "-" => Ok(Self::Stdin),
             arg => Ok(Self::Arg(arg.to_owned())),
         }
     }
