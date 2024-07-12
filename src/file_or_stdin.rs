@@ -52,6 +52,14 @@ impl<T> FileOrStdin<T> {
         !self.is_stdin()
     }
 
+    /// The value passed to this arg (Either "-" for stdin or a filepath)
+    pub fn filename(&self) -> &str {
+        match &self.source {
+            Source::Stdin => "-",
+            Source::Arg(path) => path,
+        }
+    }
+
     /// Read the entire contents from the input source, returning T::from_str
     pub fn contents(self) -> Result<T, StdinError>
     where
@@ -167,4 +175,17 @@ impl<T> FromStr for FileOrStdin<T> {
             _type: PhantomData,
         })
     }
+}
+
+#[test]
+fn test_source_methods() {
+    let val: FileOrStdin<String> = "-".parse().unwrap();
+    assert!(val.is_stdin());
+    assert!(!val.is_file());
+    assert_eq!(val.filename(), "-");
+
+    let val: FileOrStdin<String> = "/path/to/something".parse().unwrap();
+    assert!(val.is_file());
+    assert!(!val.is_stdin());
+    assert_eq!(val.filename(), "/path/to/something");
 }
