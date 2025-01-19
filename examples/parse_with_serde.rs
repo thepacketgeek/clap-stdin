@@ -39,7 +39,7 @@ impl FromStr for User {
 #[derive(Debug, Parser)]
 struct Args {
     /// Parsed user from json, provided via a filepath (or leave blank to read from stdin)
-    #[clap(default_value = "-")]
+    #[arg(default_value = "-")]
     user: FileOrStdin<User>,
 }
 

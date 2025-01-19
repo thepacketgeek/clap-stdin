@@ -103,7 +103,9 @@ $ .example myfile.txt
 ```
 
 ## Reading from Stdin without special characters
-When using [`MaybeStdin`] or [`FileOrStdin`], you can allow your users to omit the "-" character to read from `stdin` by providing a `default_value` to clap. This works with positional and optional args:
+When using [`MaybeStdin`] or [`FileOrStdin`], you can allow your users to omit the "-" character to read from `stdin` by providing a `default_value` to clap.
+
+**NOTE:** This only works with positional args, since clap requires optional args (E.g. using #[arg(long, short)]) to have a value to parse.
 
 ```rust,no_run
 use clap::Parser;
@@ -112,7 +114,7 @@ use clap_stdin::FileOrStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
-    #[clap(default_value = "-")]
+    #[arg(default_value = "-")]
     input: FileOrStdin,
 }
 

@@ -4,9 +4,9 @@ use clap_stdin::FileOrStdin;
 
 #[derive(Debug, Parser)]
 struct Args {
-    #[clap(default_value = "-")]
+    #[arg(default_value = "-")]
     first: FileOrStdin,
-    #[clap(short, long)]
+    #[arg(short, long)]
     second: Option<String>,
 }
 

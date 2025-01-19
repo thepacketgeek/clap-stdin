@@ -5,7 +5,7 @@ use clap_stdin::MaybeStdin;
 #[derive(Debug, Parser)]
 struct Args {
     first: MaybeStdin<String>,
-    #[clap(short, long)]
+    #[arg(short, long)]
     second: Option<String>,
 }
 
