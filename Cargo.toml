@@ -1,6 +1,6 @@
 [package]
 name = "clap-stdin"
-version = "0.5.1"
+version = "0.6.0"
 edition = "2021"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
 description = "Provides a type for easily accepting Clap arguments from stdin"
@@ -19,9 +19,9 @@ test_bin = ["clap"]
 test_bin_tokio = ["clap", "tokio"]
 
 [dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 clap = { version = "4.5", features = ["derive"], optional = true }
-tokio = { version = "1.37", features = [
+tokio = { version = "1.43", features = [
     "fs",
     "io-std",
     "io-util",
