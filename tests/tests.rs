@@ -227,3 +227,59 @@ fn test_is_stdin() {
             r#"FIRST is_stdin: true; SECOND is_stdin: false"#,
         ));
 }
+
+#[test]
+fn test_file_or_stdout_positional_args() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::cargo_bin("file_or_stdout_positional_arg")
+        .unwrap()
+        .args(["-v", "FILE", tmp_path])
+        .assert()
+        .success();
+    let output = String::from_utf8_lossy(&std::fs::read(&tmp_path).unwrap()).to_string();
+    assert_eq!(&output, "FILE\n");
+
+    Command::cargo_bin("file_or_stdout_positional_arg")
+        .unwrap()
+        .args(["-v", "FILE", "-"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(r#"FILE"#));
+
+    Command::cargo_bin("file_or_stdout_positional_arg")
+        .unwrap()
+        .args(["-v", "FILE"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(r#"FILE"#));
+}
+
+#[test]
+fn test_file_or_stdout_optional_args() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::cargo_bin("file_or_stdout_optional_arg")
+        .unwrap()
+        .args(["-v", "FILE", "--output", tmp_path])
+        .assert()
+        .success();
+    let output = String::from_utf8_lossy(&std::fs::read(&tmp_path).unwrap()).to_string();
+    assert_eq!(&output, "FILE\n");
+
+    Command::cargo_bin("file_or_stdout_optional_arg")
+        .unwrap()
+        .args(["-v", "FILE", "--output", "-"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(r#"FILE"#));
+
+    Command::cargo_bin("file_or_stdout_optional_arg")
+        .unwrap()
+        .args(["-v", "FILE"])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(r#"FILE"#));
+}

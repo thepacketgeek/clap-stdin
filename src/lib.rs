@@ -8,6 +8,8 @@ mod maybe_stdin;
 pub use maybe_stdin::MaybeStdin;
 mod file_or_stdin;
 pub use file_or_stdin::FileOrStdin;
+mod file_or_stdout;
+pub use file_or_stdout::FileOrStdout;
 
 static STDIN_HAS_BEEN_READ: AtomicBool = AtomicBool::new(false);
 
@@ -79,6 +81,50 @@ impl std::fmt::Debug for Source {
         match self {
             Source::Stdin => write!(f, "stdin"),
             Source::Arg(v) => v.fmt(f),
+        }
+    }
+}
+
+/// Destination of the value contents will be either `stdout` or a CLI arg provided filepath
+#[derive(Clone)]
+pub(crate) enum Dest {
+    Stdout,
+    Arg(String),
+}
+
+impl Dest {
+    pub(crate) fn into_writer(self) -> std::io::Result<impl std::io::Write> {
+        let input: Box<dyn std::io::Write + 'static> = match self {
+            Dest::Stdout => Box::new(std::io::stdout()),
+            Dest::Arg(filepath) => {
+                let f = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(false)
+                    .open(filepath)?;
+                Box::new(f)
+            }
+        };
+        Ok(input)
+    }
+}
+
+impl FromStr for Dest {
+    type Err = std::io::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "-" => Ok(Self::Stdout),
+            arg => Ok(Self::Arg(arg.to_owned())),
+        }
+    }
+}
+
+impl std::fmt::Debug for Dest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Dest::Stdout => write!(f, "stdout"),
+            Dest::Arg(path) => path.fmt(f),
         }
     }
 }
