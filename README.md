@@ -6,6 +6,7 @@ from `stdin`, the user will pass the commonly used `stdin` alias: `-`
 
 - `MaybeStdin`: Used when a value can be passed in via args OR `stdin`
 - `FileOrStdin`: Used when a value can be read in from a file OR `stdin`
+- `FileOrStdout`: Used to proxy as a writer for either a file OR `stdout`
 
 ## `MaybeStdin`
 
@@ -102,6 +103,39 @@ $ cat myfile.txt
 $ .example myfile.txt
 ```
 
+## `FileOrStdout`
+
+Example usage with `clap`'s `derive` feature for a positional argument:
+```rust,no_run
+use std::io::Write;
+use clap::Parser;
+use clap_stdin::FileOrStdout;
+
+#[derive(Debug, Parser)]
+struct Args {
+    output: FileOrStdout,
+}
+
+# fn main() -> anyhow::Result<()> {
+let args = Args::parse();
+let mut writer = args.output.into_writer()?;
+writeln!(&mut writer, "testing");
+# Ok(())
+# }
+```
+
+Calling this CLI:
+```sh
+# using stdout for positional arg value
+$ cargo run -- -
+testing
+
+# using filename for positional arg value
+$ cargo run -- output.txt
+$ cat output.txt
+testing
+```
+
 ## Reading from Stdin without special characters
 When using [`MaybeStdin`] or [`FileOrStdin`], you can allow your users to omit the "-" character to read from `stdin` by providing a `default_value` to clap.
 
@@ -138,7 +172,7 @@ input=testing
 ```
 
 ## Async Support
-`FileOrStdin` can also be used with [`tokio::io::AsyncRead`](https://docs.rs/tokio/latest/tokio/io/trait.AsyncRead.html) using the `tokio` feature. See [`FileOrStdin::contents_async`] and [`FileOrStdin::into_async_reader`] for examples.
+`FileOrStdin` and `FileOrStdout` can also be used with [`tokio::io::AsyncRead`](https://docs.rs/tokio/latest/tokio/io/trait.AsyncRead.html) and [`tokio::io::AsyncWrite`](https://docs.rs/tokio/latest/tokio/io/trait.AsyncWrite.html) respectively, using the `tokio` feature. See [`FileOrStdin::contents_async`], [`FileOrStdin::into_async_reader`], and [`FileOrStdout::into_async_writer`] for examples.
 
 # Using `MaybeStdin` or `FileOrStdin` multiple times
 Both [`MaybeStdin`] and [`FileOrStdin`] will check at runtime if `stdin` is being read from multiple times. You can use this
