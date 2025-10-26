@@ -1,11 +1,11 @@
 [package]
 name = "clap-stdin"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
-description = "Provides a type for easily accepting Clap arguments from stdin"
+description = "Provides types for easily accepting Clap arguments from stdin and writing to stdout"
 categories = ["command-line-interface"]
-keywords = ["clap", "stdin"]
+keywords = ["clap", "stdin", "stdout"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/clap-stdin"
 readme = "README.md"
