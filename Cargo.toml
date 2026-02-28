@@ -1,6 +1,6 @@
 [package]
 name = "clap-stdin"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
 description = "Provides types for easily accepting Clap arguments from stdin and writing to stdout"
@@ -29,7 +29,7 @@ tokio = { version = "1.47", features = [
 
 [dev-dependencies]
 anyhow = "1.0"
-assert_cmd = "2.0"
+assert_cmd = "2.1"
 predicates = "3.1"
 clap = { version = "4.5", features = ["derive"] }
 tempfile = "3.20"
