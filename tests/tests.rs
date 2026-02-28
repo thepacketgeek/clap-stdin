@@ -1,7 +1,7 @@
 use std::fs;
 
-use assert_cmd::cargo_bin;
 use assert_cmd::Command;
+use assert_cmd::cargo_bin;
 use predicates::prelude::*;
 
 use clap_stdin::StdinError;
