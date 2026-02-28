@@ -100,7 +100,7 @@ impl Dest {
                 let f = std::fs::OpenOptions::new()
                     .create(true)
                     .write(true)
-                    .truncate(false)
+                    .truncate(true)
                     .open(filepath)?;
                 Box::new(f)
             }
