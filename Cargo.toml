@@ -105,3 +105,17 @@ path = "tests/fixtures/file_or_stdout_optional_arg.rs"
 test = false
 bench = false
 required-features = ["test_bin"]
+
+[[bin]]
+name = "file_or_stdout_append_positional_arg"
+path = "tests/fixtures/file_or_stdout_append_positional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "file_or_stdout_append_optional_arg"
+path = "tests/fixtures/file_or_stdout_append_optional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]

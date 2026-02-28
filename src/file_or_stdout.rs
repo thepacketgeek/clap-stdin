@@ -1,9 +1,14 @@
+use std::marker::PhantomData;
 use std::str::FromStr;
 
-use super::Dest;
+use super::{Dest, Truncate, WriteMode};
 
 /// `FileOrStdout` can be used as a proxy output writer to write to whichever destination
 /// was specified by the CLI args, a file or `stdout`.
+///
+/// The type parameter `M` controls how the file is opened:
+/// - [`Truncate`] (default): truncates the file before writing
+/// - [`Append`](super::Append): appends to the file
 ///
 /// ```rust
 /// use std::path::PathBuf;
@@ -32,11 +37,12 @@ use super::Dest;
 /// 1 2 3 4
 /// ```
 #[derive(Debug, Clone)]
-pub struct FileOrStdout {
+pub struct FileOrStdout<M: WriteMode = Truncate> {
     dest: Dest,
+    _mode: PhantomData<M>,
 }
 
-impl FileOrStdout {
+impl<M: WriteMode> FileOrStdout<M> {
     /// Was this value read from stdout
     pub fn is_stdout(&self) -> bool {
         matches!(self.dest, Dest::Stdout)
@@ -78,12 +84,12 @@ impl FileOrStdout {
     /// # }
     /// ```
     pub fn into_writer(self) -> Result<impl std::io::Write, std::io::Error> {
-        self.dest.into_writer()
+        self.dest.into_writer_with_mode::<M>()
     }
 
     #[cfg(feature = "tokio")]
-    /// Create a reader from the source, to allow user flexibility of
-    /// how to read and parse (e.g. all at once or in chunks)
+    /// Create a writer from the dest, to allow user flexibility of
+    /// how to write output (e.g. all at once or in chunks)
     ///
     /// ```no_run
     /// use std::io::Write;
@@ -110,7 +116,10 @@ impl FileOrStdout {
         let output: std::pin::Pin<Box<dyn tokio::io::AsyncWrite + 'static>> = match &self.dest {
             Dest::Stdout => Box::pin(tokio::io::stdout()),
             Dest::Arg(filepath) => {
-                let f = tokio::fs::File::open(filepath).await?;
+                let mut opts = tokio::fs::OpenOptions::new();
+                opts.create(true).write(true);
+                M::configure_tokio(&mut opts);
+                let f = opts.open(filepath).await?;
                 Box::pin(f)
             }
         };
@@ -118,12 +127,15 @@ impl FileOrStdout {
     }
 }
 
-impl FromStr for FileOrStdout {
+impl<M: WriteMode> FromStr for FileOrStdout<M> {
     type Err = std::io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let dest = Dest::from_str(s)?;
-        Ok(Self { dest })
+        Ok(Self {
+            dest,
+            _mode: PhantomData,
+        })
     }
 }
 

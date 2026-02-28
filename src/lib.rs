@@ -11,6 +11,56 @@ pub use file_or_stdin::FileOrStdin;
 mod file_or_stdout;
 pub use file_or_stdout::FileOrStdout;
 
+mod write_mode {
+    /// Trait controlling how [`super::FileOrStdout`] opens files.
+    pub trait WriteMode: sealed::Sealed + Clone + std::fmt::Debug {
+        #[doc(hidden)]
+        fn configure(options: &mut std::fs::OpenOptions) -> &mut std::fs::OpenOptions;
+
+        #[doc(hidden)]
+        #[cfg(feature = "tokio")]
+        fn configure_tokio(options: &mut tokio::fs::OpenOptions) -> &mut tokio::fs::OpenOptions;
+    }
+
+    mod sealed {
+        pub trait Sealed {}
+        impl Sealed for super::Truncate {}
+        impl Sealed for super::Append {}
+    }
+
+    /// Truncate the file before writing (default).
+    #[derive(Debug, Clone)]
+    pub struct Truncate;
+
+    impl WriteMode for Truncate {
+        fn configure(options: &mut std::fs::OpenOptions) -> &mut std::fs::OpenOptions {
+            options.truncate(true)
+        }
+
+        #[cfg(feature = "tokio")]
+        fn configure_tokio(options: &mut tokio::fs::OpenOptions) -> &mut tokio::fs::OpenOptions {
+            options.truncate(true)
+        }
+    }
+
+    /// Append to the file instead of overwriting.
+    #[derive(Debug, Clone)]
+    pub struct Append;
+
+    impl WriteMode for Append {
+        fn configure(options: &mut std::fs::OpenOptions) -> &mut std::fs::OpenOptions {
+            options.append(true)
+        }
+
+        #[cfg(feature = "tokio")]
+        fn configure_tokio(options: &mut tokio::fs::OpenOptions) -> &mut tokio::fs::OpenOptions {
+            options.append(true)
+        }
+    }
+}
+
+pub use write_mode::{Append, Truncate, WriteMode};
+
 static STDIN_HAS_BEEN_READ: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, thiserror::Error)]
@@ -93,19 +143,19 @@ pub(crate) enum Dest {
 }
 
 impl Dest {
-    pub(crate) fn into_writer(self) -> std::io::Result<impl std::io::Write> {
-        let input: Box<dyn std::io::Write + 'static> = match self {
+    pub(crate) fn into_writer_with_mode<M: WriteMode>(
+        self,
+    ) -> std::io::Result<impl std::io::Write> {
+        let output: Box<dyn std::io::Write + 'static> = match self {
             Dest::Stdout => Box::new(std::io::stdout()),
             Dest::Arg(filepath) => {
-                let f = std::fs::OpenOptions::new()
-                    .create(true)
-                    .write(true)
-                    .truncate(false)
-                    .open(filepath)?;
-                Box::new(f)
+                let mut opts = std::fs::OpenOptions::new();
+                opts.create(true).write(true);
+                M::configure(&mut opts);
+                Box::new(opts.open(filepath)?)
             }
         };
-        Ok(input)
+        Ok(output)
     }
 }
 
