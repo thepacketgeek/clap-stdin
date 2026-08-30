@@ -201,6 +201,24 @@ $ echo "2" | ./example - -
 error: invalid value '-' for '<SECOND>': stdin argument used more than once
 ```
 
+# Using `MaybeStdin` or `FileOrStdin` with `clap_complete`
+Shell completions generated with `clap_complete` do not work with `MaybeStdin` and `FileOrStdin` by default, but @quantenzitrone found a solution using [`PathCompleter::stdio()`](https://docs.rs/clap_complete/latest/clap_complete/engine/struct.PathCompleter.html#method.stdio):
+
+```rust
+use clap::{CommandFactory, Parser};
+use clap_complete::engine::{ArgValueCompleter, PathCompleter, ValueCompleter};
+use clap_stdin::FileOrStdin;
+
+#[derive(Debug, Parser)]
+#[command()]
+struct Args {
+    #[arg(add = ArgValueCompleter::new(|x: &std::ffi::OsStr| PathCompleter::file().stdio().complete(x)), default_value = "-")]
+    value: FileOrStdin,
+}
+```
+
+See [`file_or_stdin_completion.rs`](tests/fixtures/file_or_stdin_completion.rs) for a full example.
+
 # License
 
 `clap-stdin` is both MIT and Apache License, Version 2.0 licensed, as found
