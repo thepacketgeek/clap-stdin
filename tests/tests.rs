@@ -119,6 +119,25 @@ fn test_file_or_stdin_positional_arg() {
 }
 
 #[test]
+fn test_file_or_stdin_completion() {
+    let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
+    fs::write(&tmp, "FILE").expect("couldn't write to temp file");
+    let tmp_path = tmp.path().to_str().unwrap();
+
+    Command::new(cargo_bin!("file_or_stdin_completion"))
+        .args([&tmp_path])
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(r#"VALUE: FILE"#));
+    Command::new(cargo_bin!("file_or_stdin_completion"))
+        .args([&tmp_path])
+        .write_stdin("TESTING")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(r#"VALUE: FILE"#));
+}
+
+#[test]
 fn test_file_or_stdin_optional_arg() {
     let tmp = tempfile::NamedTempFile::new().expect("couldn't create temp file");
     // In this case, --second is `Option<FileOrStdin<u32>>` so we'll have a number in the file

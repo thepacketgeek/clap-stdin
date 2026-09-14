@@ -15,12 +15,13 @@ repository = "https://github.com/thepacketgeek/clap-stdin"
 default = []
 tokio = ["dep:tokio"]
 # This feature is used for testing with the bins below, since they are linked with deps and not dev-deps
-test_bin = ["clap"]
-test_bin_tokio = ["clap", "tokio"]
+test_bin = ["clap", "clap_complete"]
+test_bin_tokio = ["clap", "tokio", "clap_complete"]
 
 [dependencies]
 thiserror = "2.0"
 clap = { version = "4.6", features = ["derive"], optional = true }
+clap_complete = { version = "4.6", features = ["unstable-dynamic"], optional = true }
 tokio = { version = "1.53", features = [
     "fs",
     "io-std",
@@ -32,6 +33,7 @@ anyhow = "1.0"
 assert_cmd = "2.2"
 predicates = "3.1"
 clap = { version = "4.6", features = ["derive"] }
+clap_complete = { version = "4.6", features = ["unstable-dynamic"] }
 tempfile = "3.27"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -46,6 +48,13 @@ required-features = ["default"]
 [[bin]]
 name = "maybe_stdin_positional_arg"
 path = "tests/fixtures/maybe_stdin_positional_arg.rs"
+test = false
+bench = false
+required-features = ["test_bin"]
+
+[[bin]]
+name = "file_or_stdin_completion"
+path = "tests/fixtures/file_or_stdin_completion.rs"
 test = false
 bench = false
 required-features = ["test_bin"]
