@@ -202,7 +202,7 @@ error: invalid value '-' for '<SECOND>': stdin argument used more than once
 ```
 
 # Using `MaybeStdin` or `FileOrStdin` with `clap_complete`
-Shell completions generated with `clap_complete` do not work with `MaybeStdin` and `FileOrStdin` by default, but @quantenzitrone found a solution using [`PathCompleter::stdio()`](https://docs.rs/clap_complete/latest/clap_complete/engine/struct.PathCompleter.html#method.stdio):
+Shell completions generated with `clap_complete` do not work with `MaybeStdin` and `FileOrStdin` by default, but @quantenzitrone found a solution using [`PathCompleter::stdio()`](https://docs.rs/clap_complete/4/clap_complete/engine/struct.PathCompleter.html#method.stdio):
 
 ```rust
 use clap::{CommandFactory, Parser};
