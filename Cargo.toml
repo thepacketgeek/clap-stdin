@@ -1,6 +1,6 @@
 [package]
 name = "clap-stdin"
-version = "0.8.1"
+version = "1.0.0"
 edition = "2024"
 authors = ["Mat Wood <thepacketgeek@users.noreply.github.com>"]
 description = "Provides types for easily accepting Clap arguments from stdin and writing to stdout"
